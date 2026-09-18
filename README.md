@@ -1,7 +1,5 @@
 # Production-Grade Scalable Event-Driven Ticketing Microservices Platform
 
-![Architecture Banner](assets/architecture_demo.png)
-
 An enterprise-grade, event-driven microservices architecture built with **Python (FastAPI)**, **PostgreSQL (Database-per-Service)**, **Redis (Atomic Lua Concurrency Engine & Rate Limiting)**, and **Docker Compose**. Designed specifically to handle high-concurrency live event ticketing drops and flash sales (e.g., stadium show ticket releases) with **zero overselling** and strict domain boundary isolation.
 
 ---
@@ -86,8 +84,6 @@ sequenceDiagram
 
 ```
 Ticketing Microservices Platform/
-├── assets/
-│   └── architecture_demo.png       # Portfolio architecture banner graphic
 ├── .env                            # Active environment configuration
 ├── .env.example                    # Environment configuration template
 ├── .gitignore                      # Git ignore rules (secrets, caches, DB volumes)
@@ -95,8 +91,6 @@ Ticketing Microservices Platform/
 ├── pytest.ini                      # Pytest suite configuration
 ├── docker-compose.yml              # Multi-container orchestration (DBs, Redis, Services)
 ├── README.md                       # Comprehensive architecture & operational documentation
-├── .vscode/
-│   └── settings.json               # VS Code Pylance path & lint settings
 ├── scripts/
 │   ├── init-db.sql                 # Multi-database initializer (auth_db, catalog_db, etc.)
 │   └── test_flash_sale.py          # High-concurrency surge test simulation script
