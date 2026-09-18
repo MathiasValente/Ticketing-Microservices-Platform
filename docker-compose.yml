@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ticketing_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticketing_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  gateway_auth:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: ticketing_gateway
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_change_in_production_12345!}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - AUTH_DB_URL=${AUTH_DB_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/auth_db}
+      - CATALOG_SERVICE_URL=${CATALOG_SERVICE_URL:-http://catalog_service:8002}
+      - INVENTORY_SERVICE_URL=${INVENTORY_SERVICE_URL:-http://inventory_service:8003}
+      - CHECKOUT_SERVICE_URL=${CHECKOUT_SERVICE_URL:-http://checkout_service:8004}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  catalog_service:
+    build:
+      context: .
+      dockerfile: services/catalog/Dockerfile
+    container_name: ticketing_catalog
+    ports:
+      - "8002:8002"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - CATALOG_DB_URL=${CATALOG_DB_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/catalog_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  inventory_service:
+    build:
+      context: .
+      dockerfile: services/inventory/Dockerfile
+    container_name: ticketing_inventory
+    ports:
+      - "8003:8003"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - INVENTORY_DB_URL=${INVENTORY_DB_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/inventory_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  checkout_service:
+    build:
+      context: .
+      dockerfile: services/checkout/Dockerfile
+    container_name: ticketing_checkout
+    ports:
+      - "8004:8004"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - CHECKOUT_DB_URL=${CHECKOUT_DB_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/checkout_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

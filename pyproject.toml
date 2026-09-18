@@ -1,0 +1,14 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "UP", "RUF"]
+ignore = [
+    "B008",  # Do not perform function call `Depends` in argument defaults (standard in FastAPI)
+    "BLE001", # Do not catch blind Exception (used for defensive Redis network fallback)
+    "E501"   # Line too long
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
