@@ -54,3 +54,23 @@ async def test_register_and_login_flow(gateway_client):
         "/api/v1/auth/login", json={"email": user_payload["email"], "password": "WrongPassword!"}
     )
     assert bad_login.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_gateway_route_protection(gateway_client):
+    # Unauthenticated POST to catalog (protected) -> 401 Unauthorized
+    catalog_resp = await gateway_client.post("/api/v1/catalog/events", json={"title": "Test Event"})
+    assert catalog_resp.status_code == 401
+
+    # Unauthenticated POST to inventory hold (protected) -> 401 Unauthorized
+    inventory_resp = await gateway_client.post(
+        "/api/v1/inventory/hold", json={"ticket_id": "ticket-1", "user_id": "user-1"}
+    )
+    assert inventory_resp.status_code == 401
+
+    # Unauthenticated POST to checkout pay (protected) -> 401 Unauthorized
+    checkout_resp = await gateway_client.post(
+        "/api/v1/checkout/pay", json={"reservation_id": "res-1", "amount": 100.0}
+    )
+    assert checkout_resp.status_code == 401
+
